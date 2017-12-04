@@ -7,7 +7,7 @@ def generate_tophat2_command(
         genome_dir,
         gtf,
         output,
-        fusion_ignore_chromosomes,
+        fusion_ignore_chromosomes=None,
         threads=8,
         inner_mate_distance=10,
         mate_std_dev=35,

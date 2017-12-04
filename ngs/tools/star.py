@@ -74,7 +74,15 @@ def align_rnaseq(
         '--limitBAMsortRAM', str(bam_sort_ram)
         ])
     cmd = " ".join([program, options])
-    return cmd
+    junction_file = '.'.join([prefix, 'Chimeric.out.junction'])
+    sam_file = '.'.join([prefix, 'Chimeric.out.sam'])
+    trans_bam_file = '.'.join([prefix, 'Aligned.toTranscriptome.out.bam'])
+    sorted_bam_file = '.'.join([prefix, 'sortedByCoord.out.bam'])
+    return {"command": cmd,
+            "junction": junction_file,
+            "bam": trans_bam_file,
+            "sorted_bam": sorted_bam_file,
+            "sam": sam_file}
 
 
 def get_default_config(file):

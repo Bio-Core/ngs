@@ -291,7 +291,7 @@ class Gatk(object):
             '-rf BadCigar'
             ])
         cmd = ' '.join([program, options])
-        return {"command": cmd, "output": output}
+        return {"command": cmd, "output": output_filename}
 
     def haplotype_caller(self,
                          bams,
@@ -305,11 +305,20 @@ class Gatk(object):
 
         USAGE:
             object.haplotype_caller(
-                 arg1
-                )
+                bams,
+                dbsnp,
+                output,
+                stand_call_conf=20,
+                stand_emit_conf=20,
+                memory=8)
 
         INPUT:
-            *  arg1:  description of arg1
+            * bams:             list of BAM files to process (required)
+            * dbsnp:            VCF of dbSNP (required)
+            * output:           name of output file (required)
+            * stand_call_conf:  min Phred scale confidence for call (default: 20)
+            * stand_emit_conf:  min Phred scale confidence to show (default: 20)
+            * memory:           amount of memory to allocate to Java heap (default: 8)
 
         OUTPUT:
              list of return values
@@ -335,28 +344,37 @@ class Gatk(object):
             '-dontUseSoftClippedBases'
             ])
         cmd = ' '.join([program, options])
-        return {"command":cmd, "output":output_filename}
+        self.variant_output = output_filename
+        return {"command": cmd, "output": self.variant_output}
 
     def variant_filtration(self,
                            variant,
                            output,
                            filters,
-                           memory=8,
                            window=35,
-                           cluster=3):
+                           cluster=3,
+                           memory=8):
         """
         A Python method that wraps the GATK VariantFiltration subprogram.
 
         USAGE:
             object.variant_filtration(
-                variant,
-                output,
-                filters,
-                memory=8,
+                variantoutput.vcf,
+                output=output.filtered.vcf,
+                filters="QD:QD<2.0","FS:FS>30.0",
                 window=35,
-                cluster=3)
+                cluster=3,
+                memory=8)
         INPUT:
-            * bams: a list of BAM files to process (required)
+            * variant:      VCF file from HaplotypeCaller (required)
+            * output:       name of output file to write filtered data to
+                            (required)
+            * filters:      a comma separates string of f filters to apply in
+                            "name:filter,name:filter" format (default: "")
+            * window:       window size to evaluate clustered SNPs (default: 35)
+            * cluster:      number of SNPs making up a cluster (default: 3)
+            * memory:       amount of memory to allocate to the Java heap in GB
+                            (default: 8)
 
         OUTPUT:
             Returns a dictionary containing the command to execute and path to
@@ -370,22 +388,28 @@ class Gatk(object):
             ])
         output_filename = '/'.join([self.output_dir, output])
         filter_list = []
-        for key, value in filters.items():
-            filter_list.extend([
-                '--filterName',
-                key,
-                '--filterExpression',
-                ''.join(["\"", key, value, "\""])
-                ])
-        filter_option = ' '.join(filter_list)
+        filter_option = ""
+        if filters != "":
+            # the filters will be a string comprised:
+            #   <name1>:<filter1>,<name2>:<filter2>...
+            filter_dict = dict(item.split(":") for item in filters.split(","))
+            for key, value in filter_dict.items():
+                filter_list.extend([
+                    '--filterName',
+                    key,
+                    '--filterExpression',
+                    ''.join(["\"", value, "\""])
+                    ])
+            filter_option = ' '.join(filter_list)
         options = ' '.join([
             '-T VariantFiltration',
             '-R', self.reference,
-            '--variant', variant,
+            '--variant', output,
             '-o', output_filename,
             '-window', str(window),
-            '-cluster', str(cluster),
-            filter_option])
+            '-cluster', str(cluster)])
+        if filter_option != "":
+            options = ' '.join([options, filter_option])
         cmd = ' '.join([program, options])
         return {"command":cmd, "output":output_filename}
 

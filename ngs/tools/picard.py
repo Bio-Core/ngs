@@ -5,35 +5,35 @@ from uuid import uuid4
 
 class Picard(object):
     """
-
+    Picard initializer
     """
     def __init__(
-        self,
-        picard="picard.jar",
-        java="/usr/bin/java",
-        tmpdir='tmp',
-        validation_stringency='SILENT'):
+            self,
+            picard="picard.jar",
+            java="/usr/bin/java",
+            tmpdir='tmp',
+            validation_stringency='SILENT'):
         """
         Object initialization, auto-executed during class instantiation.
         """
         self.picard = picard
         self.java = java
         self.tmpdir = tmpdir
-        self.validation_stringency="SILENT"
+        self.validation_stringency = validation_stringency
         return None
 
     def generate_addorreplacereadgroups_command(
-        self,
-        input,
-        output,
-        sample,
-        library,
-        unit,
-        center,
-        unique_id=str(uuid4()),
-        memory=20,
-        sort_order='coordinate',
-        platform='ILLUMINA'):
+            self,
+            input,
+            output,
+            sample,
+            library,
+            unit="NONE",
+            center="ca.uhn.pmgc",
+            unique_id=str(uuid4()),
+            memory=20,
+            sort_order='coordinate',
+            platform='ILLUMINA'):
         """
         Method for generating the command to execute the
         AddOrReplaceReadGroups Picard program.
@@ -50,7 +50,7 @@ class Picard(object):
             * unique_id:    unique identifier for the read group ID (optional)
             * sample:       name of sample to be used in the read group (required)
             * library:      name of library to be used in the read group (required)
-            * unit:         platform unit containing flowcell barcode (required)
+            * unit:         platform unit containing flowcell barcode (default: NONE)
             * center:       the center where sequencing was performed (default: ca.uhn.pmgc)
             * sort_order:   the sort order for the reads (default: coordinate)
             * platform:     name of sequencing platform used (default: ILLUMINA)
@@ -58,7 +58,7 @@ class Picard(object):
         OUTPUT:
             Returns a dictionary containing the command to be executed.
         """
-        program =  ' '.join([
+        program = ' '.join([
             self.java,
             ''.join(["-Xmx", str(memory), 'g']),
             '='.join(['-Djava.io.tmpdir', self.tmpdir]),
@@ -75,20 +75,19 @@ class Picard(object):
             '='.join(["RGSM", sample])
             ])
         cmd = ' '.join([program, options])
-        return {"command":cmd}
+        return {"command":cmd, "output": output}
 
     def generate_markduplicates_command(
-        self,
-        input,
-        output,
-        metrics,
-        create_index=True,
-        max_records=150000,
-        memory=20):
+            self,
+            input,
+            output,
+            metrics,
+            create_index=True,
+            max_records=150000,
+            memory=20):
         """
         Method for generating the command to execute the MarkDuplicates Picard
         program.
-        
         USAGE:
             generate_markduplicates_command(input="input.bam", output="PROCESSED_BAMS/output",
                 metric="PROCESSED_BAMS/sample", create_index=True, max_records=10000,
@@ -123,5 +122,4 @@ class Picard(object):
             '='.join(["VALIDATION_STRINGENCY", self.validation_stringency])
             ])
         cmd = ' '.join([program, options])
-        return {"command":cmd}
-
+        return {"command":cmd, "bam": output, "metrics": metrics}
