@@ -6,7 +6,7 @@ import ngs.tools.gatk as ngs
 
 class TestGatkMethods(unittest.TestCase):
     """
-    Test class used to test the Gath package.
+    Test class used to test the Gatk package.
     """
     def test_split_n_cigar_reads(self, bams=None, output="split.bam"):
         """
